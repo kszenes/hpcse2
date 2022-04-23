@@ -159,7 +159,7 @@ void WaveEquation::run()
 
         // MPI_Send(&u, 1, SEND_HALO_MINUS[0], rank_minus[0], 0, cart_comm);
         // MPI_Send(&u, 1, SEND_HALO_MINUS[1], rank_minus[1], 1, cart_comm);
-        // MPI_Send(&u, 1, SEND_HALO_PLUS[0], rank_plus[0], 2, cart_comm);
+        MPI_Send(&u, 1, SEND_HALO_PLUS[0], rank_plus[0], 2, cart_comm);
         // MPI_Send(&u, 1, SEND_HALO_PLUS[1], rank_plus[1], 3, cart_comm);
 
 
