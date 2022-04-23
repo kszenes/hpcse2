@@ -1,5 +1,5 @@
 CXX = mpicxx
-CXXFLAGS = -g -O3 -std=c++11 -Wall -Wextra -Wno-cast-function-type -Xpreprocessor -fopenmp
+CXXFLAGS = -g -O3 -std=c++11 -Wall -Wextra -Wno-cast-function-type -fopenmp
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -9,6 +9,6 @@ main: main.o Equation2D.o WaveEquation.o
 run:
 	export OMP_NUM_THREADS=6 ; unset LSB_AFFINITY_HOSTFILE ; mpirun -n 4 --use-hwthread-cpus --map-by node:PE=6 ./main 256 1.0
 submit:
-	export OMP_NUM_THREADS=6 ; unset LSB_AFFINITY_HOSTFILE ; bsub -n 24 -W 0:10 mpirun -n 4 --map-by node:PE=6 ./main 256 1.0
+	export OMP_NUM_THREADS=6 ; unset LSB_AFFINITY_HOSTFILE ; bsub -I -n 24 -W 0:10 mpirun -n 4 --map-by node:PE=6 ./main 256 1.0
 clean:
 	rm -rf *.o output/* main *.gif

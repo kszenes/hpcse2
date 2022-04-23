@@ -97,8 +97,10 @@ void Equation2D::run(const double t_end)
     MPI_Request request[8];
     
     //OPENMP parallel section for TODO (2) should start here
+    #pragma omp parallel
     {
         //Set initial conditions (also set du/dt = 0 -> u_old = u at t=0)
+        #pragma omp for collapse(2)
         for (int i = -1; i < N+1; ++i)
         for (int j = -1; j < N+1; ++j)
         {
@@ -118,37 +120,45 @@ void Equation2D::run(const double t_end)
             computeTimestep();
 
             if (count % 100 == 0)
-            {
-                if (rank == 0) std::cout << "t = " << t << std::endl;
+                #pragma omp master
                 {
+                if (rank == 0) std::cout << "t = " << t << std::endl;
                     derivedFunctionCalls();
                     saveGrid(count);
                 }
-            }
 
             // Send and receive halo cells
             int d;
             d = 0;
-            MPI_Irecv(u, 1, RECV_HALO_MINUS[d], rank_minus[d], d    , cart_comm, &request[2 * d        ]);
-            MPI_Irecv(u, 1, RECV_HALO_PLUS [d], rank_plus [d], d + 1, cart_comm, &request[2 * d + 1    ]);
-            MPI_Isend(u, 1, SEND_HALO_PLUS [d], rank_plus [d], d    , cart_comm, &request[4 + 2 * d    ]);
-            MPI_Isend(u, 1, SEND_HALO_MINUS[d], rank_minus[d], d + 1, cart_comm, &request[4 + 2 * d + 1]);
-            d = 1;
-            MPI_Irecv(u, 1, RECV_HALO_MINUS[d], rank_minus[d], d    , cart_comm, &request[2 * d        ]);
-            MPI_Irecv(u, 1, RECV_HALO_PLUS [d], rank_plus [d], d + 1, cart_comm, &request[2 * d + 1    ]);
-            MPI_Isend(u, 1, SEND_HALO_PLUS [d], rank_plus [d], d    , cart_comm, &request[4 + 2 * d    ]);
-            MPI_Isend(u, 1, SEND_HALO_MINUS[d], rank_minus[d], d + 1, cart_comm, &request[4 + 2 * d + 1]);
+            #pragma omp master
+            {
+              MPI_Irecv(u, 1, RECV_HALO_MINUS[d], rank_minus[d], d    , cart_comm, &request[2 * d        ]);
+              MPI_Irecv(u, 1, RECV_HALO_PLUS [d], rank_plus [d], d + 1, cart_comm, &request[2 * d + 1    ]);
+              MPI_Isend(u, 1, SEND_HALO_PLUS [d], rank_plus [d], d    , cart_comm, &request[4 + 2 * d    ]);
+              MPI_Isend(u, 1, SEND_HALO_MINUS[d], rank_minus[d], d + 1, cart_comm, &request[4 + 2 * d + 1]);
+              d = 1;
+              MPI_Irecv(u, 1, RECV_HALO_MINUS[d], rank_minus[d], d    , cart_comm, &request[2 * d        ]);
+              MPI_Irecv(u, 1, RECV_HALO_PLUS [d], rank_plus [d], d + 1, cart_comm, &request[2 * d + 1    ]);
+              MPI_Isend(u, 1, SEND_HALO_PLUS [d], rank_plus [d], d    , cart_comm, &request[4 + 2 * d    ]);
+              MPI_Isend(u, 1, SEND_HALO_MINUS[d], rank_minus[d], d + 1, cart_comm, &request[4 + 2 * d + 1]);
+            }
+            #pragma omp barrier
 
             // Apply stencil and update solution
+            #pragma omp for collapse(2)
             for (int i = 2; i < N; ++i)
             for (int j = 2; j < N; ++j)
             {
                 applyStencil(i, j);
             }
-    
-            // Wait for communication to complete
-            MPI_Waitall(8, &request[0], MPI_STATUSES_IGNORE);
+            #pragma omp master
+            { 
+              // Wait for communication to complete
+              MPI_Waitall(8, &request[0], MPI_STATUSES_IGNORE);
+            }
+            #pragma omp barrier
 
+            #pragma omp for
             for (int i = 1; i < N+1; ++i)
             {
                 applyStencil(i, 1);
@@ -158,13 +168,15 @@ void Equation2D::run(const double t_end)
                 applyStencil(N, i);
             }
 
+            #pragma omp master
+            {
+              // Swap vectors
+              std::swap(u_old,u);
+              std::swap(u_new,u);
 
-            // Swap vectors
-            std::swap(u_old,u);
-            std::swap(u_new,u);
-
-            t += dt;
-            count++;
+              t += dt;
+              count++;
+            }
         }//while (t < t_end)
 
     }//OPENMP parallel section for TODO (2) should end here
