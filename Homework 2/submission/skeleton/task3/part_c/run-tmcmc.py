@@ -76,7 +76,12 @@ e["File Output"]["Path"] = '_korali_result_tmcmc'
 
 
 # Set console verbosity
-# e["Console Output"]["Verbosity"] = "Detailed"
+e["Console Output"]["Verbosity"] = "Detailed"
 
 # Run Korali TODO
 k.run(e)
+
+best_sample = e["Results"]["Best Parameters"] 
+for i in range(4):
+    print('{str(best_sample["Parameters"][i])}')
+
