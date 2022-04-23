@@ -73,3 +73,7 @@ e["Console Output"]["Verbosity"] = "Detailed"
 
 # Run Experiment TODO
 k.run(e)
+
+best_sample = e["Results"]["Best Parameters"] 
+for i in range(5):
+    print('{str(best_sample["Parameters"][i])}')

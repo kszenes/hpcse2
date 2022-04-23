@@ -108,30 +108,33 @@ void WaveEquation::run()
     MPI_Datatype RECV_HALO_MINUS[2];
 
     int sizes[] = {N_halo, N_halo};
-    int subsizesH[] = {1, N};
-    int subsizesV[] = {N, 1};
+    int subsizesH[] = {N, 1};
+    int subsizesV[] = {1, N};
 
-    int startT_send[] = {1, 1};
-    int startB_send[] = {N_halo-2, 1};
     int startL_send[] = {1, 1};
-    int startR_send[] = {1, N_halo-2};
+    int startR_send[] = {N, 1};
 
-    int startT_recv[] = {0, 1};
-    int startB_recv[] = {N_halo-1, 1};
-    int startL_recv[] = {1, 0};
-    int startR_recv[] = {1, N_halo-1};
+    int startL_recv[] = {0, 1};
+    int startR_recv[] = {N+1, 1};
 
-    MPI_Type_create_subarray(2, sizes, subsizesH, startT_send, MPI_ORDER_C, MPI_DOUBLE, &SEND_HALO_PLUS[1]);
-    MPI_Type_create_subarray(2, sizes, subsizesH, startT_recv, MPI_ORDER_C, MPI_DOUBLE, &RECV_HALO_PLUS[1]);
+    int startB_send[] = {1, 1};
+    int startT_send[] = {1, N};
 
-    MPI_Type_create_subarray(2, sizes, subsizesH, startB_send, MPI_ORDER_C, MPI_DOUBLE, &SEND_HALO_MINUS[1]);
-    MPI_Type_create_subarray(2, sizes, subsizesH, startB_recv, MPI_ORDER_C, MPI_DOUBLE, &RECV_HALO_MINUS[1]);
+    int startT_recv[] = {1, N+1};
+    int startB_recv[] = {1, 0};
 
     MPI_Type_create_subarray(2, sizes, subsizesV, startL_send, MPI_ORDER_C, MPI_DOUBLE, &SEND_HALO_MINUS[0]);
-    MPI_Type_create_subarray(2, sizes, subsizesV, startL_recv, MPI_ORDER_C, MPI_DOUBLE, &RECV_HALO_MINUS[0]);
-
     MPI_Type_create_subarray(2, sizes, subsizesV, startR_send, MPI_ORDER_C, MPI_DOUBLE, &SEND_HALO_PLUS[0]);
+
+    MPI_Type_create_subarray(2, sizes, subsizesV, startL_recv, MPI_ORDER_C, MPI_DOUBLE, &RECV_HALO_MINUS[0]);
     MPI_Type_create_subarray(2, sizes, subsizesV, startR_recv, MPI_ORDER_C, MPI_DOUBLE, &RECV_HALO_PLUS[0]);
+
+    MPI_Type_create_subarray(2, sizes, subsizesH, startB_send, MPI_ORDER_C, MPI_DOUBLE, &SEND_HALO_MINUS[1]);
+    MPI_Type_create_subarray(2, sizes, subsizesH, startT_send, MPI_ORDER_C, MPI_DOUBLE, &SEND_HALO_PLUS[1]);
+
+    MPI_Type_create_subarray(2, sizes, subsizesH, startT_recv, MPI_ORDER_C, MPI_DOUBLE, &RECV_HALO_PLUS[1]);
+    MPI_Type_create_subarray(2, sizes, subsizesH, startB_recv, MPI_ORDER_C, MPI_DOUBLE, &RECV_HALO_MINUS[1]);
+
 
     MPI_Type_commit(&SEND_HALO_MINUS[0]);
     MPI_Type_commit(&SEND_HALO_MINUS[1]);
@@ -151,19 +154,18 @@ void WaveEquation::run()
         // TODO Question c)
         // Send and receive halo boundaries
         //
-        MPI_Request request[4];
-        // MPI_Irecv(&u, 1, RECV_HALO_MINUS[0], rank_minus[0], 0, cart_comm, &request[0]);
-        // MPI_Irecv(&u, 1, RECV_HALO_MINUS[1], rank_minus[1], 1, cart_comm, &request[1]);
-        // MPI_Irecv(&u, 1, RECV_HALO_PLUS[0], rank_plus[0], 2, cart_comm, &request[2]);
-        // MPI_Irecv(&u, 1, RECV_HALO_PLUS[1], rank_plus[1], 3, cart_comm, &request[3]);
+        MPI_Request request[8];
+        MPI_Irecv(u.data(), 1, RECV_HALO_MINUS[0], rank_minus[0], 0, cart_comm, &request[0]);
+        MPI_Irecv(u.data(), 1, RECV_HALO_PLUS[0], rank_plus[0], 1, cart_comm, &request[1]);
+        MPI_Irecv(u.data(), 1, RECV_HALO_MINUS[1], rank_minus[1], 2, cart_comm, &request[2]);
+        MPI_Irecv(u.data(), 1, RECV_HALO_PLUS[1], rank_plus[1], 3, cart_comm, &request[3]);
 
-        // MPI_Send(&u, 1, SEND_HALO_MINUS[0], rank_minus[0], 0, cart_comm);
-        // MPI_Send(&u, 1, SEND_HALO_MINUS[1], rank_minus[1], 1, cart_comm);
-        // MPI_Send(&u, 1, SEND_HALO_PLUS[0], rank_plus[0], 2, cart_comm);
-        // MPI_Send(&u, 1, SEND_HALO_PLUS[1], rank_plus[1], 3, cart_comm);
+        MPI_Isend(u.data(), 1, SEND_HALO_PLUS[0], rank_plus[0], 0, cart_comm, &request[4]);
+        MPI_Isend(u.data(), 1, SEND_HALO_MINUS[0], rank_minus[0], 1, cart_comm, &request[5]);
+        MPI_Isend(u.data(), 1, SEND_HALO_PLUS[1], rank_plus[1], 2, cart_comm, &request[6]);
+        MPI_Isend(u.data(), 1, SEND_HALO_MINUS[1], rank_minus[1], 3, cart_comm, &request[7]);
+        MPI_Waitall(8, request, MPI_STATUS_IGNORE);
 
-
-        // MPI_Waitall(4, request, MPI_STATUS_IGNORE);
 
         //
         // TODO Uncomment following when finished with subquestion a)

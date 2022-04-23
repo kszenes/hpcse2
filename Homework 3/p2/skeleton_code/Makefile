@@ -7,6 +7,8 @@ CXXFLAGS += -O3
 $(BINARY): messages.cpp
 	mpicxx -o $@ $< $(CXXFLAGS)
 
+# # $(BINARY): messages.cpp
+# # 	mpicxx -o $@ $< 
 run:
 	mpirun -n 2 $(BINARY)
 

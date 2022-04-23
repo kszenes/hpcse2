@@ -180,23 +180,31 @@ void init_aos_type(const std::vector<T>& c, const MPI_Datatype& base_type, MPI_D
 template<typename Container>
 void init_soa_type(const Container& messages, MPI_Datatype& container_type) {
 
-    const int n = messages.size();
+    const int n = messages.x1.size();
     std::vector<MPI_Datatype> types = {MPI_DOUBLE, MPI_DOUBLE, MPI_INT, MPI_INT};
-    std::vector<int> blocklens(n, 4)
+    std::vector<int> blocklens(n, 4);
     std::vector<MPI_Aint> offsets[4];
+    MPI_Aint p_lb;
+
+
+    std::cout << messages.x1[0] << '\n';
+    MPI_Get_address(&messages, &p_lb);
+    MPI_Get_address(&messages.x1[0], &offsets[0]);
+    // MPI_Get_address(&messages.x2, &offsets[1]);
+    // MPI_Get_a:ddress(&messages.z1, &offsets[2]);
+    // MPI_Get_address(&messages.z2, &offsets[3]);
+
+    // std::vector<MPI_Aint> offsets_true = {MPI_Aint_diff(&offsets[0], &p_lb),
+    //                                       MPI_Aint_diff(&offsets[1], &p_lb),
+    //                                       MPI_Aint_diff(&offsets[2], &p_lb),
+    //                                       MPI_Aint_diff(&offsets[3], &p_lb)};
+
+    // MPI_Datatype in_t;
+    // MPI_Type_create_struct(4, blocklens.data(), offsets_true.data(), types.data(), &in_t);
+
     
-    std::vector<int> x1, x2;
-    std::vector<double> z1, z2;
-
-    for (const auto &x : messages) {
-        x1.push_back(x.x1);
-        x2.push_back(x.x2);
-        z1.push_back(x.z1);
-        z2.push_back(x.z2);
-    }
-
-    MPI_Type_create_struct(n, blocklens.data(), offsets.data(), types.data(), &container_type);
-    MPI_Type_commit(&container_type); 
+    // MPI_Type_create_struct(n, blocklens.data(), offsets.data(), types.data(), &container_type);
+    // MPI_Type_commit(&container_type); 
 
 }
 
