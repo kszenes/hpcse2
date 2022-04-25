@@ -120,18 +120,18 @@ void Equation2D::run(const double t_end)
             computeTimestep();
 
             if (count % 100 == 0)
-                #pragma omp master
-                {
+              #pragma omp master
+              {
                 if (rank == 0) std::cout << "t = " << t << std::endl;
                     derivedFunctionCalls();
                     saveGrid(count);
-                }
+              }
 
             // Send and receive halo cells
-            int d;
-            d = 0;
             #pragma omp master
             {
+            int d;
+            d = 0;
               MPI_Irecv(u, 1, RECV_HALO_MINUS[d], rank_minus[d], d    , cart_comm, &request[2 * d        ]);
               MPI_Irecv(u, 1, RECV_HALO_PLUS [d], rank_plus [d], d + 1, cart_comm, &request[2 * d + 1    ]);
               MPI_Isend(u, 1, SEND_HALO_PLUS [d], rank_plus [d], d    , cart_comm, &request[4 + 2 * d    ]);
@@ -142,7 +142,6 @@ void Equation2D::run(const double t_end)
               MPI_Isend(u, 1, SEND_HALO_PLUS [d], rank_plus [d], d    , cart_comm, &request[4 + 2 * d    ]);
               MPI_Isend(u, 1, SEND_HALO_MINUS[d], rank_minus[d], d + 1, cart_comm, &request[4 + 2 * d + 1]);
             }
-            #pragma omp barrier
 
             // Apply stencil and update solution
             #pragma omp for collapse(2)
@@ -151,6 +150,7 @@ void Equation2D::run(const double t_end)
             {
                 applyStencil(i, j);
             }
+
             #pragma omp master
             { 
               // Wait for communication to complete
@@ -177,6 +177,7 @@ void Equation2D::run(const double t_end)
               t += dt;
               count++;
             }
+            #pragma omp barrier
         }//while (t < t_end)
 
     }//OPENMP parallel section for TODO (2) should end here

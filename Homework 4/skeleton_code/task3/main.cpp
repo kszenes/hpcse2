@@ -32,6 +32,7 @@ int main(int argc, char **argv)
   {
     WaveEquation simulation = WaveEquation(gridpoints_per_dim, MPI_COMM_WORLD);
     simulation.run(t_end);
+    std::cout << "Done";
   }
   MPI_Barrier(MPI_COMM_WORLD);
   time += MPI_Wtime();
