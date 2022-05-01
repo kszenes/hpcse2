@@ -124,7 +124,7 @@ void Equation2D::run(const double t_end)
               {
                 if (rank == 0) std::cout << "t = " << t << std::endl;
                     derivedFunctionCalls();
-                    saveGrid(count);
+                    // saveGrid(count);
               }
 
             // Send and receive halo cells

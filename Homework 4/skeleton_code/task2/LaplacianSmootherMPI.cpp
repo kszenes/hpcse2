@@ -22,8 +22,6 @@ LaplacianSmootherMPI::LaplacianSmootherMPI(const int Nx,
 
 
     // TODO: define cartesian topology and neighboring ranks
-    comm_cart = comm_world;
-    const int procs[] = {Px, Py, Pz};
     MPI_Cart_create(comm_root, 3, procs, periodic, true, &comm_cart);
 
     MPI_Comm_rank(comm_cart, &rank_cart);
@@ -32,13 +30,14 @@ LaplacianSmootherMPI::LaplacianSmootherMPI(const int Nx,
     MPI_Cart_shift(comm_cart, 2, 1, &nbr[Z0], &nbr[Z1]); // z
 
     // TODO: define custom MPI datatypes for x,y,z faces
-    MPI_Datatype y_vector;
-    MPI_Type_vector(Ny, 1, Nx, MPI_DOUBLE, &y_vector);
+    MPI_Type_vector(Ny, 1, Nx, MPI_DOUBLE, &StripeX);
 
-    MPI_Type_vector(Nz, 1, 1, y_vector, &FaceX);
-    MPI_Type_vector(Nz, Nx, Ny, MPI_DOUBLE, &FaceY);
-    MPI_Type_vector(Nx*Ny, 1, 1, MPI_DOUBLE, &FaceZ);
+    MPI_Type_vector(Nz, 1, Nx*Ny, StripeX, &FaceX);
+    MPI_Type_vector(Nz, Nx, Nx*Ny, MPI_DOUBLE, &FaceY);
+    MPI_Type_vector(Ny, Nx, Nx, MPI_DOUBLE, &FaceZ);
 
+
+    MPI_Type_commit(&StripeX);
     MPI_Type_commit(&FaceX);
     MPI_Type_commit(&FaceY);
     MPI_Type_commit(&FaceZ);
@@ -62,6 +61,7 @@ LaplacianSmootherMPI::LaplacianSmootherMPI(const int Nx,
 LaplacianSmootherMPI::~LaplacianSmootherMPI()
 {
     //TODO: free MPI datatypes and communicator
+    MPI_Type_free(&StripeX);
     MPI_Type_free(&FaceX);
     MPI_Type_free(&FaceY);
     MPI_Type_free(&FaceZ);
@@ -89,7 +89,23 @@ void LaplacianSmootherMPI::report()
 void LaplacianSmootherMPI::comm()
 {
     //TODO : send and receive the six faces of ghost cells
+    const int Nx = N[0] - 2;
+    const int Ny = N[1] - 2;
+    const int Nz = N[2] - 2;
 
+    MPI_Irecv(&operator()(Nx, 0, 0), 1, FaceX, nbr[X1], 0, comm_cart, &recv_req[0]);
+    MPI_Irecv(&operator()(-1, 0, 0), 1, FaceX, nbr[X0], 1, comm_cart, &recv_req[1]);
+    MPI_Irecv(&operator()(0, Ny, 0), 1, FaceY, nbr[Y1], 2, comm_cart, &recv_req[2]);
+    MPI_Irecv(&operator()(0, -1, 0), 1, FaceY, nbr[Y0], 3, comm_cart, &recv_req[3]);
+    MPI_Irecv(&operator()(0, 0, Nz), 1, FaceZ, nbr[Z0], 4, comm_cart, &recv_req[4]);
+    MPI_Irecv(&operator()(0, 0, -1), 1, FaceZ, nbr[Z1], 5, comm_cart, &recv_req[5]);
+
+    MPI_Isend(&operator()(0, 0, 0), 1, FaceX, nbr[X0], 0, comm_cart, &send_req[0]);
+    MPI_Isend(&operator()(Nx-1, 0, 0), 1, FaceX, nbr[X1], 1, comm_cart, &send_req[1]);
+    MPI_Isend(&operator()(0, 0, 0), 1, FaceY, nbr[Y0], 2, comm_cart, &send_req[2]);
+    MPI_Isend(&operator()(0, Ny-1, 0), 1, FaceY, nbr[Y1], 3, comm_cart, &send_req[3]);
+    MPI_Isend(&operator()(0, 0, 0), 1, FaceZ, nbr[Z0], 4, comm_cart, &send_req[4]);
+    MPI_Isend(&operator()(0, 0, Nz-1), 1, FaceZ, nbr[Z1], 5, comm_cart, &send_req[5]);
 
 }
 
@@ -98,8 +114,8 @@ void LaplacianSmootherMPI::sync()
     //TODO : uncomment the following to enable waiting for communication to complete
 
     // wait for pending sends (because we will write to it)
-    //MPI_Waitall(6, send_req.data(), MPI_STATUSES_IGNORE);
+    MPI_Waitall(6, send_req.data(), MPI_STATUSES_IGNORE);
 
     // wait for pending recvs (because we will read from it)
-    //MPI_Waitall(6, recv_req.data(), MPI_STATUSES_IGNORE);
+    MPI_Waitall(6, recv_req.data(), MPI_STATUSES_IGNORE);
 }
