@@ -32,9 +32,9 @@ LaplacianSmootherMPI::LaplacianSmootherMPI(const int Nx,
     // TODO: define custom MPI datatypes for x,y,z faces
     MPI_Type_vector(Ny, 1, Nx, MPI_DOUBLE, &StripeX);
 
-    MPI_Type_vector(Nz, 1, Nx*Ny, StripeX, &FaceX);
-    MPI_Type_vector(Nz, Nx, Nx*Ny, MPI_DOUBLE, &FaceY);
-    MPI_Type_vector(Ny, Nx, Nx, MPI_DOUBLE, &FaceZ);
+    MPI_Type_vector(Nz, 1, N[0], StripeX, &FaceX);
+    MPI_Type_vector(Nz, Nx, N[0]*N[1], MPI_DOUBLE, &FaceY);
+    MPI_Type_vector(Ny, Nx, N[0], MPI_DOUBLE, &FaceZ);
 
 
     MPI_Type_commit(&StripeX);

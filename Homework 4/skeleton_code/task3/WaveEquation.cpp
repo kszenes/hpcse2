@@ -25,6 +25,7 @@ void WaveEquation::derivedFunctionCalls()
     energy_norm_m = 0;
     energy_norm_a = 0;
 
+#pragma omp for collapse(2) reduction (+:energy_norm_m, energy_norm_a)
     for (int i = 1; i < N + 1; ++i)
     for (int j = 1; j < N + 1; ++j)
     {
@@ -35,12 +36,15 @@ void WaveEquation::derivedFunctionCalls()
                       +  (u[i * N_halo + (j - 1)] - u[i * N_halo + j]) * (u[i * N_halo + (j - 1)] - u[i * N_halo + j]);
     }    
 
+#pragma omp master
+    {
     double energy_norm = 0.5 *(energy_norm_m *h/dt *h/dt + energy_norm_a);
 
     MPI_Reduce((rank == 0) ? MPI_IN_PLACE : &energy_norm, &energy_norm, 1, MPI_DOUBLE, MPI_SUM, 0, cart_comm);
 
     if (rank == 0)
         std::cout << " --> E(t) = "  << energy_norm << std::endl;
+    }
 }
 
 void WaveEquation::computeTimestep()
