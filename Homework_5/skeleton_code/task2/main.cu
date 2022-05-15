@@ -2,6 +2,7 @@
 #include "../include/utils.h"
 #include <chrono>
 #include <random>
+#include <cuda_profiler_api.h>
 
 /// Depending on which target is compiling, different .o object file will be
 /// linked.
@@ -43,7 +44,9 @@ int main() {
     };
 
     // Verification.
+    CUDA_CHECK(cudaProfilerStart());
     compute();
+    CUDA_CHECK(cudaProfilerStop());
     CUDA_CHECK(cudaMemcpy(fHost, fDev, N * sizeof(double3), cudaMemcpyDeviceToHost));
     double fx = 0.0;
     double fy = 0.0;

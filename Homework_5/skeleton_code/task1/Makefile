@@ -3,10 +3,10 @@ CUFLAGS = -O3 -std=c++11 --compiler-options "-Wall -Wextra" -I../include \
 					-lineinfo
 .PHONY: all clean
 
-all: my_dgemm_1.exe my_dgemm_2.exe my_dgemm_3.exe
+all: my_dgemm_1.exe my_dgemm_2.exe
 	@true
 
-ptx: my_dgemm_1.ptx my_dgemm_2.ptx my_dgemm_3.ptx
+ptx: my_dgemm_1.ptx my_dgemm_2.ptx
 	@true
 
 clean:

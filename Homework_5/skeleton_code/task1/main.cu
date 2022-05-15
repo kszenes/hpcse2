@@ -16,11 +16,7 @@ int main()
 
   // Set-up host-side matrices, must be multiple of BLOCK_SIZE and BLOCK_ITEMS_XY
   // from my_dgemm_*.cu files
-  /* int m = 1 << 13; */
-  /* int n = 1 << 12; */
-  /* int k = 1 << 12; */
-
-  int m = 1 << 12;
+  int m = 1 << 13;
   int n = 1 << 12;
   int k = 1 << 12;
 
@@ -64,14 +60,14 @@ int main()
   CUDA_CHECK(cudaMemcpy(d_C, h_C, m*n*sizeof(double), cudaMemcpyHostToDevice));
   CUDA_CHECK(cudaMemcpy(d_Ccublas, h_C, m*n*sizeof(double), cudaMemcpyHostToDevice));
 
-  CUDA_CHECK(cudaProfilerStart()); // if you want to use nvprof
   // Correctness check between cublasDgemm and myDgemm
   CUDA_CHECK(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, d_A, m, d_B, k, &beta, d_Ccublas, m));
+  CUDA_CHECK(cudaProfilerStart()); // if you want to use nvprof
   myDgemm(m, n, k, alpha, d_A, d_B, beta, d_C);
+  CUDA_CHECK(cudaProfilerStop()); // end of profiling region
   CUDA_CHECK(cudaDeviceSynchronize());
   double myRmse = rmse(m*n, d_Ccublas, d_C);
   std::cout << "My GEMM :   RMSE(Ccublas,C) = " << myRmse << std::endl;
-  CUDA_CHECK(cudaProfilerStop()); // end of profiling region
 
   // Benchmark Dgemm
   EventTimer timer;

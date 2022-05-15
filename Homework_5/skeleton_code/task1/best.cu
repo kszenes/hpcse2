@@ -26,7 +26,6 @@ __global__ void sharedDgemm(
 
     double tmp = 0;
     
-#pragma unroll
     for (int i = 0; i < (k / BLOCK_SIZE); i++){
 
       a[tx + ty * BLOCK_SIZE] = A[row + (i*BLOCK_SIZE + tx) * m];
@@ -34,7 +33,6 @@ __global__ void sharedDgemm(
       b[tx + ty * BLOCK_SIZE] = B[col*n + i*BLOCK_SIZE + ty];
       __syncthreads();
 
-#pragma unroll
       for (int j = 0; j < BLOCK_SIZE; j++) {
         tmp += a[ty*BLOCK_SIZE + j] * b[j*BLOCK_SIZE + tx];
       }

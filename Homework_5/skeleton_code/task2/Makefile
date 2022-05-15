@@ -1,8 +1,8 @@
-CUFLAGS=-O3 -std=c++11 --compiler-options "-Wall -Wextra" -I../include
+CUFLAGS=-O3 -std=c++11 --compiler-options "-Wall -Wextra" -I../include -lineinfo
 
 .PHONY: all clean
 
-all: force_kernel_0 force_kernel_1
+all: force_kernel_0 force_kernel_1 force_kernel_2 force_kernel_3
 	@true
 
 clean:
