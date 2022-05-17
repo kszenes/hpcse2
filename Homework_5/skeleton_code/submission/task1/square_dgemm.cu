@@ -26,15 +26,15 @@ __global__ void sharedDgemm(
 
     double tmp = 0;
     
-    for (int i = 0; i < (k / BLOCK_SIZE); i++){
+    for (int i = 0; i < (n / BLOCK_SIZE); i++){
 
-      a[tx + ty * BLOCK_SIZE] = A[row + (i*BLOCK_SIZE + tx) * m];
+      a[ty + tx * BLOCK_SIZE] = A[row + (i*BLOCK_SIZE + tx) * n];
 
       b[tx + ty * BLOCK_SIZE] = B[col*n + i*BLOCK_SIZE + ty];
       __syncthreads();
 
       for (int j = 0; j < BLOCK_SIZE; j++) {
-        tmp += a[ty*BLOCK_SIZE + j] * b[j*BLOCK_SIZE + tx];
+        tmp += a[j*BLOCK_SIZE + ty] * b[j*BLOCK_SIZE + tx];
       }
       __syncthreads();
 
@@ -54,7 +54,7 @@ void myDgemm(
     double* const C)
 {
 //  TODO
-  dim3 dimGrid(k/BLOCK_SIZE, m/BLOCK_SIZE);
+  dim3 dimGrid(n/BLOCK_SIZE, m/BLOCK_SIZE);
   dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
   sharedDgemm<<<dimGrid, dimBlock>>>(m, n, k, alpha, A, B, beta, C);

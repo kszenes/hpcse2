@@ -1,0 +1,38 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{subcaption}
+
+
+\author{Kalman Joseph Szenes}
+\title{HPCSE2: Exercise 5}
+
+\begin{document}
+    \maketitle
+
+    \section{Task 1}
+    \subsection{a)}
+    The peak performance is computed using the following formula: Clock Rate * \#Cores * \#Flop/s/Core = 0.00133 * 3584 = 4.763 [TFLOPS]
+
+
+    The RAM bandwidth is computed using the following formula: Bus Width * Mem Clock Rate * 2 = 0.4096 / 8 * 715 = 732.16 [GB/s]
+
+    \subsection{b)}
+    Using the Roofline model, we can compute that the arithmetic intensity (AI) that would lead to ideal balance of ressources between memory and computation is around 6.5 FLOP/Byte.
+    Anything under that is memory bound, anything over that is compute bound.
+    The AI of DGEMM is given by the following formula: 
+    \[
+        \frac{m * n * k}{m * k + n * k + m * n}
+    \] where M, N and K are the matrix dimensions.
+    The AI that we obtain with our matrix dimensions is hence: 1638.4 [FLOP/Byte]. 
+    This is well over the 6.5 [FLOP/Byte] and hence DGEMM is compute bound.
+
+    
+
+
+
+
+
+
+\end{document}
