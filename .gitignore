@@ -5,3 +5,6 @@
 *.o
 *.tar.gz
 *.gif
+*.pdf
+*.nvprof
+*.nvvp
