@@ -2,6 +2,8 @@
 #include <cassert>
 #include <limits>
 
+#define FULL_MASK 0xffffffff
+
 struct Pair {
     double max;
     int idx;
@@ -13,11 +15,20 @@ __device__ Pair argMaxWarp(double a) {
     // TODO: 1.b) Compute the argmax of the given value.
     //            Return the maximum and the location of the maximum (0..31).
     Pair result;
-    result.max = 0.0;
-    result.idx = 0;
+    result.max = a;
+    result.idx = threadIdx.x & 31;
+    int idx = result.idx;
+    double max;
+    #pragma unroll
+    for (int offset = 16; offset > 0; offset /= 2) {
+        max = __shfl_down_sync(FULL_MASK, result.max, offset);
+        idx = __shfl_down_sync(FULL_MASK, result.idx, offset);
+        if (max > result.max) {
+            result.idx = idx;
+            result.max = max;
+        }
 
-    // ...
-
+    }
     return result;
 }
 

@@ -2,6 +2,8 @@
 #include <cassert>
 #include <algorithm>
 
+#define FULL_MASK 0xffffffff
+
 /// Returns the sum of all values `a` within a warp,
 /// with the correct answer returned only by the 0th thread of a warp.
 __device__ double sumWarp(double a) {
@@ -10,7 +12,12 @@ __device__ double sumWarp(double a) {
     //            return the correct result.
     //            (although this function operates only on a single warp, it
     //            will be called with many threads for testing)
-    return 0.0;
+    a += __shfl_xor_sync(FULL_MASK, a, 16);
+    a += __shfl_xor_sync(FULL_MASK, a, 8);
+    a += __shfl_xor_sync(FULL_MASK, a, 4);
+    a += __shfl_xor_sync(FULL_MASK, a, 2);
+    a += __shfl_xor_sync(FULL_MASK, a, 1);
+    return a;
 }
 
 /// Returns the sum of all values `a` within a block,
@@ -19,17 +26,38 @@ __device__ double sumBlock(double a) {
     // TODO: 1.c) Compute the sum of values `a` for all threads within a block.
     //            Only threadIdx.x == 0 has to return the correct result.
     // NOTE: For 1.c) implement either this or `argMaxBlock`!
-    return 0.0;
+    int idx = threadIdx.x;
+    __shared__ double warp_sums[32];
+
+    double warp_sum = sumWarp(a);
+
+    if ((idx & 31) == 0) {
+        warp_sums[idx >> 5] = warp_sum;
+    }
+    __syncthreads();
+
+    if (idx < 32) {
+        a = sumWarp(warp_sums[idx]);
+    }
+    return a;
 }
 
 /// Compute the sum of all values aDev[0]..aDev[N-1] for N <= 1024^2 and store the result to bDev[0].
-void sum1M(const double * /* aDev */, double * /* bDev */, int N) {
+void sum1M(const double *aDev , double *bDev , int N) {
     assert(N <= 1024 * 1024);
     // TODO: 1.d) Implement either this or `argMax1M`.
     //            Avoid copying any data back to the host.
     //            Hint: The solution requires more CUDA operations than just
     //            calling a single kernel. Feel free to use whatever you find
     //            necessary.
+
+    int blockSize = 1024;
+    int numBlocks = (N + blockSize - 1) % blockSize;
+
+    /* if ((idx % blockDim.x) == 0) { */
+    /*     atomicAdd(bDev[0], blockSum); */
+    /* } */
+
 }
 
 
