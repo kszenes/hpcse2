@@ -18,6 +18,17 @@ struct CellListInfo {
 
     // TODO: (optional) Add here any utility functions here you might find
     // useful, such as computing cell index from coordinates.
+
+    __device__ int2 computeIndices(double2 coord) const {
+        int cx = (int) coord.x * invCellSize.x;
+        int cy = (int) coord.y * invCellSize.y;
+        return {cx, cy};
+    }
+
+    __device__ int computeIndex(double2 coord) const {
+        int2 c = computeIndices(coord);
+        return c.y * numCells.x + c.x;
+    }
 };
 
 class CellList {

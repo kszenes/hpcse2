@@ -86,10 +86,6 @@ Scan::~Scan() {
 }
 
 void Scan::inclusiveSum(const int *inDev, int *outDev, int N) {
-    (void)inDev;  // do not complain about unused variables...
-    (void)outDev;
-    (void)N;
-
     int numThreads = 1024;
     int numBlocks = (N + numThreads - 1) / numThreads;
 
