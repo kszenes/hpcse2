@@ -1,4 +1,4 @@
-CUFLAGS=-O3 -std=c++14 --compiler-options "-Wall -Wextra"
+CUFLAGS=-O3 -std=c++14 -lineinfo --compiler-options "-Wall -Wextra"
 
 .PHONY: all clean
 

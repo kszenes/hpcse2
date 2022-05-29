@@ -22,4 +22,5 @@ private:
     // multiple times with the same `N` (apart from the first run, of course).
     // In practice, avoiding allocation/deallocation all the time is desirable
     // because cudaFree must synchronize the device!
+    int* tmp;
 };
