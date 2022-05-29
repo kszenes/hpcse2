@@ -30,6 +30,10 @@ __device__ double sumBlock(double a) {
     __shared__ double warp_sums[32];
 
     double warp_sum = sumWarp(a);
+    if (idx < 32) {
+        warp_sums[idx] = 0;
+    }
+    __syncthreads();
 
     if ((idx & 31) == 0) {
         warp_sums[idx >> 5] = warp_sum;
@@ -42,6 +46,30 @@ __device__ double sumBlock(double a) {
     return a;
 }
 
+__global__ void sumKernel(const double *aDev, double *tmpDev, int N) {
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < N) {
+        double a = aDev[idx];
+        __syncthreads();
+        a = sumBlock(a);
+        if (threadIdx.x == 0) {
+            tmpDev[blockIdx.x] = a;
+        }
+    }
+
+}
+
+__global__ void reduceTmp(const double *tmpDev, double *bDev, int N) {
+    const int idx = threadIdx.x;
+    double a = tmpDev[idx];
+    __syncthreads();
+    a = sumBlock(a);
+    if (idx == 0)
+        bDev[0] = a;
+
+}
+
+
 /// Compute the sum of all values aDev[0]..aDev[N-1] for N <= 1024^2 and store the result to bDev[0].
 void sum1M(const double *aDev , double *bDev , int N) {
     assert(N <= 1024 * 1024);
@@ -51,12 +79,18 @@ void sum1M(const double *aDev , double *bDev , int N) {
     //            calling a single kernel. Feel free to use whatever you find
     //            necessary.
 
-    int blockSize = 1024;
-    int numBlocks = (N + blockSize - 1) % blockSize;
+    int numThreads = 1024;
+    int numBlocks = (N + numThreads - 1) / numThreads;
+    printf("numBlocks = %d\n", numBlocks);
 
-    /* if ((idx % blockDim.x) == 0) { */
-    /*     atomicAdd(bDev[0], blockSum); */
-    /* } */
+    double* tmpDev;
+    CUDA_CHECK(cudaMalloc(&tmpDev, numBlocks * sizeof(double)));
+    sumKernel<<<numBlocks, numThreads>>>(aDev, tmpDev, N);
+    reduceTmp<<<1, numBlocks>>>(tmpDev, bDev, numBlocks);
+
+    CUDA_CHECK(cudaFree(tmpDev));
+    
+
 
 }
 
